@@ -274,14 +274,9 @@
         position: absolute;
         left: 100%;
         top: 0;
-        margin-left: 8px;
-        background: var(--popup-bg);
-        backdrop-filter: blur(24px);
-        border: 1px solid rgba(48, 93, 255, 0.15);
-        border-radius: 12px;
-        padding: 6px;
-        min-width: 160px;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
+        padding-left: 8px;
+        margin-left: 0;
+        background: transparent;
         opacity: 0;
         visibility: hidden;
         transform: scale(0.9) translateX(-8px);
@@ -289,6 +284,16 @@
                     transform 0.2s ease,
                     visibility 0.2s;
         pointer-events: none;
+    }
+
+    .submenu-inner {
+        background: var(--popup-bg);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(48, 93, 255, 0.15);
+        border-radius: 12px;
+        padding: 6px;
+        min-width: 160px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
     }
 
     .ctx-item:hover .submenu {
@@ -565,8 +570,10 @@
     <div class="ctx-item has-submenu" id="ctx-save">
         <i class="fa fa-save"></i> Save
         <div class="submenu">
-            <div class="ctx-item" id="ctx-save-lua"><i class="fa fa-file-code"></i> Save as .lua</div>
-            <div class="ctx-item" id="ctx-save-txt"><i class="fa fa-file-text"></i> Save as .txt</div>
+            <div class="submenu-inner">
+                <div class="ctx-item" id="ctx-save-lua"><i class="fa fa-file-code"></i> Save as .lua</div>
+                <div class="ctx-item" id="ctx-save-txt"><i class="fa fa-file-text"></i> Save as .txt</div>
+            </div>
         </div>
     </div>
     <div class="ctx-item" id="ctx-pin"><i class="fa fa-thumbtack"></i> Pin to Left</div>
