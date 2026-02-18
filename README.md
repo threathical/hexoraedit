@@ -1,0 +1,2 @@
+# hexoraedit
+editor for hexora
