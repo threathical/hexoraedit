@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+     <title>Hexora Editor</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23305dff'/><text x='50%25' y='50%25' dominant-baseline='central' text-anchor='middle' font-family='Arial Black,sans-serif' font-weight='900' font-size='20' fill='white'>H</text></svg>">
+     <meta name="description" content="Use Hexora editor for free, while staying advanced!">
+    <meta property="og:title" content="Hexora Editor">
+    <meta property="og:description" content="Use Hexora editor for 100% free!">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Hexora Editor">
+    <meta name="twitter:description" content="Use Hexora editor for 100% free!">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    :root {
+        --bg: #171717;
+        --container-bg: #111111;
+        --accent: #305dff;
+        --accent-light: #5a80ff;
+        --accent-dim: rgba(48, 93, 255, 0.15);
+        --tab-active: #171717;
+        --tab-inactive: transparent;
+        --popup-bg: #1a1a1a;
+        --border: rgba(48, 93, 255, 0.2);
+        --text: #ffffff;
+        --text-dim: #7a7a7a;
+        --hover: rgba(48, 93, 255, 0.08);
+        --dark-gray: #2a2a2a;
+    }
+
+    body, html {
+        margin: 0; padding: 0; width: 100%; height: 100%;
+        background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden;
+    }
+
+    #editor-wrapper { display: flex; flex-direction: column; width: 100vw; height: 100vh; background: var(--container-bg); overflow: hidden; box-sizing: border-box; }
+
+    #tabs-bar {
+        height: 38px;
+        display: flex;
+        align-items: flex-end;
+        background: var(--container-bg);
+        padding: 4px 12px 0 12px;
+        gap: 0;
+        box-sizing: border-box;
+        position: relative;
+        z-index: 5;
+    }
+
+    .tab.closing {
+        animation: tabExit 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    }
+
+    @keyframes tabExit {
+        from { opacity: 1; transform: scale(1); max-width: 200px; margin-right: 8px; }
+        to { opacity: 0; transform: scale(0.92); max-width: 0; margin-right: 0; padding: 0; }
+    }
+
+    .tab {
+        position: relative; 
+        height: 34px;
+        min-width: 140px; 
+        max-width: 220px;
+        background: var(--tab-inactive); 
+        border-radius: 12px 12px 0 0;
+        display: flex; 
+        align-items: center; 
+        padding: 0 12px;
+        gap: 7px; 
+        cursor: pointer; 
+        color: var(--text-dim);
+        font-size: 13px; 
+        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        border: 1px solid transparent;
+        user-select: none;
+        animation: tabEntrance 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        flex: 0 0 auto;
+        overflow: visible;
+        z-index: 1;
+        margin: 0 2px;
+    }
+    
+    .tab::before,
+    .tab::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        width: 12px;
+        height: 12px;
+        opacity: 0;
+        transition: opacity 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        pointer-events: none;
+    }
+    
+    .tab::before {
+        left: -12px;
+        background: radial-gradient(circle at 0 0, transparent 12px, #171717 12px);
+    }
+    
+    .tab::after {
+        right: -12px;
+        background: radial-gradient(circle at 100% 0, transparent 12px, #171717 12px);
+    }
+
+    @keyframes tabEntrance {
+        from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .tab.active {
+        background: var(--bg);
+        color: var(--text);
+        z-index: 10;
+        margin: 0 8px;
+        height: 38px;
+        border-top: 2px solid var(--accent) !important;
+    }
+    
+    .tab.active::before,
+    .tab.active::after {
+        opacity: 1;
+    }
+
+    .tab:not(.active):hover { 
+        background: var(--hover);
+        border-radius: 10px;
+        height: 30px;
+        margin-bottom: 4px;
+        color: var(--accent-light);
+    }
+
+    .tab span { 
+        flex: 1; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+        white-space: nowrap; 
+        outline: none; 
+        font-weight: 500; 
+    }
+    
+    .tab span[contenteditable="true"] {
+        cursor: text !important;
+        background: var(--accent-dim);
+        color: var(--accent-light);
+        border-radius: 1px;
+        padding: 2px 6px;
+    }
+
+    .close-tab { 
+        width: 16px; 
+        height: 16px; 
+        border-radius: 4px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        opacity: 0;
+        flex-shrink: 0;
+        font-size: 11px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .tab:hover .close-tab { opacity: 0.5; }
+    .tab.active .close-tab { opacity: 0.4; }
+    .tab.active .close-tab:hover,
+    .close-tab:hover { 
+        opacity: 1 !important; 
+        background: rgba(255, 107, 107, 0.15);
+        color: #ff6b6b;
+    }
+
+    #add-tab {
+        height: 34px;
+        width: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--text-dim);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 8px;
+        border: 1px solid transparent;
+    }
+    #add-tab:hover { 
+        color: var(--accent-light);
+        background: var(--hover);
+    }
+
+    #monaco-container {
+        flex: 1;
+        width: 100%;
+        min-width: 0;
+        background: #171717;
+        border: none;
+        overflow: hidden;
+        position: relative;
+        box-sizing: border-box;
+    }
+
+    .tabs-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tabs-container {
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        gap: 8px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    /* Context Menus */
+    #context-menu, #plus-context-menu {
+        position: absolute; 
+        z-index: 1000;
+        background: var(--popup-bg);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(48, 93, 255, 0.15); 
+        border-radius: 12px; 
+        padding: 6px;
+        min-width: 200px; 
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(48, 93, 255, 0.05);
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(0.9) translateY(-8px);
+        transition: opacity 0.2s ease, 
+                    transform 0.2s ease,
+                    visibility 0.2s;
+        pointer-events: none;
+    }
+
+    #context-menu.show, #plus-context-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1) translateY(0);
+        pointer-events: auto;
+    }
+
+    .ctx-item {
+        padding: 10px 14px; 
+        color: var(--text); 
+        font-size: 13px; 
+        cursor: pointer;
+        border-radius: 8px; 
+        display: flex; 
+        align-items: center; 
+        gap: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .ctx-item:hover { 
+        background: var(--accent-dim);
+        color: var(--accent-light);
+    }
+    .ctx-item.danger { color: #ff6b6b; }
+    .ctx-item.danger:hover { 
+        background: rgba(255, 107, 107, 0.15);
+    }
+    
+    .ctx-item.has-submenu::after {
+        content: '\f054';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: 14px;
+        font-size: 10px;
+        opacity: 0.6;
+    }
+
+    .submenu {
+        position: absolute;
+        left: 100%;
+        top: 0;
+        margin-left: 8px;
+        background: var(--popup-bg);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(48, 93, 255, 0.15);
+        border-radius: 12px;
+        padding: 6px;
+        min-width: 160px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(0.9) translateX(-8px);
+        transition: opacity 0.2s ease, 
+                    transform 0.2s ease,
+                    visibility 0.2s;
+        pointer-events: none;
+    }
+
+    .ctx-item:hover .submenu {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1) translateX(0);
+        pointer-events: auto;
+    }
+
+    .fa { width: 14px; text-align: center; }
+    .tab .fa-file-code { 
+        font-size: 12px; 
+        color: var(--accent-light); 
+        opacity: 0.7;
+        flex-shrink: 0;
+    }
+    .tab.active .fa-file-code { opacity: 1; }
+
+    /* Loading Screen */
+    #loading-screen {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: #171717;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    .loader {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(48, 93, 255, 0.15);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 50px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.toast {
+    background: #1a1a1a;
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(48, 93, 255, 0.15);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 220px;
+    max-width: 320px;
+    opacity: 0;
+    transform: translateY(-20px);
+    animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    pointer-events: auto;
+}
+
+.toast.removing {
+    animation: toastOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes toastIn {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastOut {
+    to { opacity: 0; transform: translateY(-20px); }
+}
+
+.toast-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--accent-light);
+}
+
+.toast-content {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+    font-size: 12px;
+}
+
+.toast-message {
+    font-size: 11px;
+    color: #b0b0b0;
+}
+
+    /* Hidden file input */
+    #file-input {
+        display: none;
+    }
+
+    /* Settings Overlay */
+    #settings-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+    }
+
+    #settings-overlay.show {
+        display: flex;
+    }
+
+    #settings-overlay.closing {
+        animation: overlayFadeOut 0.2s ease forwards;
+    }
+
+    @keyframes overlayFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes overlayFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+
+    #settings-panel {
+        background: #1a1a1a;
+        border: 1px solid rgba(48, 93, 255, 0.2);
+        border-radius: 12px;
+        width: 320px;
+        height: 200px;
+        padding: 24px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 40px rgba(48, 93, 255, 0.05);
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    #settings-overlay.show #settings-panel {
+        animation: panelScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    #settings-overlay.closing #settings-panel {
+        animation: panelScaleOut 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes panelScaleIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-8px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    @keyframes panelScaleOut {
+        from {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.95) translateY(-8px);
+        }
+    }
+
+    .settings-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 24px;
+    }
+
+    .setting-item {
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .setting-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .setting-info {
+        flex: 1;
+    }
+
+    .setting-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #ffffff;
+        margin-bottom: 2px;
+    }
+
+    .setting-description {
+        font-size: 11px;
+        color: #7a7a7a;
+        line-height: 1.3;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+        width: 44px;
+        height: 24px;
+        background: #2a2a2a;
+        border-radius: 12px;
+        position: relative;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .toggle-switch.active {
+        background: rgba(48, 93, 255, 0.4);
+    }
+
+    .toggle-thumb {
+        width: 18px;
+        height: 18px;
+        background: #505050;
+        border-radius: 9px;
+        position: absolute;
+        top: 3px;
+        left: 3px;
+    }
+
+    .toggle-switch.active .toggle-thumb {
+        left: 23px;
+        background: var(--accent-light);
+    }
+
+    /* Smooth toggle animations */
+    .toggle-switch,
+    .toggle-thumb {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+</style>
+</head>
+<body>
+
+<div id="editor-wrapper">
+    <div id="tabs-bar">
+        <div id="add-tab"><i class="fa fa-plus"></i></div>
+    </div>
+    <div id="monaco-container"></div>
+</div>
+
+<div id="loading-screen">
+    <div class="loader"></div>
+</div>
+
+<!-- Tab Context Menu -->
+<div id="context-menu">
+    <div class="ctx-item" id="ctx-rename"><i class="fa fa-edit"></i> Rename</div>
+    <div class="ctx-item has-submenu" id="ctx-save">
+        <i class="fa fa-save"></i> Save
+        <div class="submenu">
+            <div class="ctx-item" id="ctx-save-lua"><i class="fa fa-file-code"></i> Save as .lua</div>
+            <div class="ctx-item" id="ctx-save-txt"><i class="fa fa-file-text"></i> Save as .txt</div>
+        </div>
+    </div>
+    <div class="ctx-item" id="ctx-pin"><i class="fa fa-thumbtack"></i> Pin to Left</div>
+    <div class="ctx-item danger" id="ctx-close"><i class="fa fa-trash"></i> Close Tab</div>
+</div>
+
+<!-- Plus Button Context Menu -->
+<div id="plus-context-menu">
+    <div class="ctx-item" id="ctx-new-tab"><i class="fa fa-plus"></i> New Tab</div>
+    <div class="ctx-item" id="ctx-open-file"><i class="fa fa-folder-open"></i> Open File</div>
+    <div class="ctx-item" id="ctx-open-menu"><i class="fa fa-cog"></i> Settings</div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Settings Overlay -->
+<div id="settings-overlay">
+    <div id="settings-panel">
+        <div class="settings-title">Settings</div>
+        
+        <!-- Minimap Toggle -->
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Minimap</div>
+                <div class="setting-description">Show code overview in the editor</div>
+            </div>
+            <div class="toggle-switch" id="minimap-toggle">
+                <div class="toggle-thumb"></div>
+            </div>
+        </div>
+
+        <!-- Word Wrap Toggle -->
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Word Wrap</div>
+                <div class="setting-description">Wrap long lines to fit editor width</div>
+            </div>
+            <div class="toggle-switch active" id="wordwrap-toggle">
+                <div class="toggle-thumb"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden file input for opening files -->
+<input type="file" id="file-input" accept=".lua,.txt,.js,.py,.html,.css,.json" multiple>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
+<script>
+    let editor, activeTabId = null, rightClickedTabId = null;
+    const tabData = {};
+
+    // Load settings from localStorage
+    function loadSettings() {
+        const minimapEnabled = localStorage.getItem('minimapEnabled') === 'true';
+        const wordWrapEnabled = localStorage.getItem('wordWrapEnabled') !== 'false'; // default true
+        
+        return { minimapEnabled, wordWrapEnabled };
+    }
+
+    // Save settings to localStorage
+    function saveSettings(settings) {
+        localStorage.setItem('minimapEnabled', settings.minimapEnabled);
+        localStorage.setItem('wordWrapEnabled', settings.wordWrapEnabled);
+    }
+
+    // Load tabs from localStorage
+    function loadTabs() {
+        const saved = localStorage.getItem('editorTabs');
+        const savedActive = localStorage.getItem('editorActiveTab');
+        
+        if (saved) {
+            try {
+                const tabs = JSON.parse(saved);
+                if (tabs && tabs.length > 0) {
+                    tabs.forEach((tab, index) => {
+                        createTab(tab.name, tab.content, false, tab.id);
+                        if (index === 0 && !savedActive) {
+                            switchTab(tab.id);
+                        }
+                    });
+                    
+                    if (savedActive && document.getElementById(savedActive)) {
+                        switchTab(savedActive);
+                    }
+                    return true;
+                }
+            } catch (e) {
+                console.error('Failed to load tabs:', e);
+            }
+        }
+        return false;
+    }
+
+    // Save tabs to localStorage
+    function saveTabs() {
+        const tabs = Array.from(document.querySelectorAll('.tab')).map(tab => {
+            const id = tab.id;
+            const name = tab.querySelector('span').textContent;
+            const content = tabData[id] || '';
+            return { id, name, content };
+        });
+        
+        localStorage.setItem('editorTabs', JSON.stringify(tabs));
+        localStorage.setItem('editorActiveTab', activeTabId);
+    }
+
+    // Toast Notification System
+    function showToast(title, message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        toast.innerHTML = `
+            <i class="fa fa-info-circle toast-icon"></i>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                ${message ? `<div class="toast-message">${message}</div>` : ''}
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('removing');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // Settings Panel Functions
+    function openSettings() {
+        const overlay = document.getElementById('settings-overlay');
+        overlay.classList.remove('closing');
+        overlay.style.display = 'flex';
+        overlay.classList.add('show');
+        
+        // Trigger animations on next frame
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+        });
+    }
+
+    function closeSettings() {
+        const overlay = document.getElementById('settings-overlay');
+        overlay.classList.add('closing');
+        overlay.style.opacity = '0';
+        
+        // Wait for animation to complete before hiding
+        setTimeout(() => {
+            overlay.classList.remove('show', 'closing');
+            overlay.style.display = 'none';
+        }, 200);
+    }
+
+    // Close settings when clicking overlay (but not the panel itself)
+    document.getElementById('settings-overlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeSettings();
+        }
+    });
+
+    // Toggle handlers
+    function setupToggles() {
+        const settings = loadSettings();
+        
+        // Minimap toggle
+        const minimapToggle = document.getElementById('minimap-toggle');
+        if (settings.minimapEnabled) {
+            minimapToggle.classList.add('active');
+        }
+        
+        minimapToggle.addEventListener('click', function() {
+            const isActive = this.classList.toggle('active');
+            if (editor) {
+                editor.updateOptions({ minimap: { enabled: isActive } });
+            }
+            saveSettings({ ...loadSettings(), minimapEnabled: isActive });
+            showToast('Minimap ' + (isActive ? 'Enabled' : 'Disabled'), 
+                     isActive ? 'Code overview is now visible' : 'Code overview is now hidden');
+        });
+
+        // Word wrap toggle
+        const wordWrapToggle = document.getElementById('wordwrap-toggle');
+        if (settings.wordWrapEnabled) {
+            wordWrapToggle.classList.add('active');
+        }
+        
+        wordWrapToggle.addEventListener('click', function() {
+            const isActive = this.classList.toggle('active');
+            if (editor) {
+                editor.updateOptions({ wordWrap: isActive ? 'on' : 'off' });
+            }
+            saveSettings({ ...loadSettings(), wordWrapEnabled: isActive });
+            showToast('Word Wrap ' + (isActive ? 'Enabled' : 'Disabled'), 
+                     isActive ? 'Lines will wrap to fit' : 'Lines will extend horizontally');
+        });
+    }
+
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+        const settings = loadSettings();
+        
+        monaco.editor.defineTheme('dark-theme', {
+            base: 'vs-dark', 
+            inherit: true, 
+            rules: [
+                // Keywords (if, then, local, function, etc) - Purple/Magenta
+                { token: 'keyword', foreground: 'c792ea', fontStyle: 'bold' },
+                
+                // Strings - Green
+                { token: 'string', foreground: 'c3e88d' },
+                
+                // Comments - Grayish blue
+                { token: 'comment', foreground: '546e7a', fontStyle: 'italic' },
+                
+                // Numbers - Orange/coral
+                { token: 'number', foreground: 'f78c6c' },
+                
+                // Functions - Blue
+                { token: 'function', foreground: '82aaff' },
+                
+                // Variables - Light cyan/white
+                { token: 'variable', foreground: 'eeffff' },
+                
+                // Types/Classes - Yellow
+                { token: 'type', foreground: 'ffcb6b' },
+                
+                // Operators - Cyan
+                { token: 'operator', foreground: '89ddff' },
+                
+                // Delimiters - Gray
+                { token: 'delimiter', foreground: '89ddff' },
+                
+                // Identifiers - White
+                { token: 'identifier', foreground: 'a6accd' },
+                
+                // Constants - Orange
+                { token: 'constant', foreground: 'f78c6c' },
+                
+                // Parameters - Orange tint
+                { token: 'parameter', foreground: 'ffcb8b' },
+            ],
+            colors: { 
+                'editor.background': '#171717',
+                'editor.foreground': '#eeffff',
+                
+                // Cursor
+                'editorCursor.foreground': '#305dff',
+                
+                // Line highlighting with borders
+                'editor.lineHighlightBackground': '#00000000',
+                'editor.lineHighlightBorder': '#305dff26',
+                
+                // Selection
+                'editor.selectionBackground': '#305dff40',
+                'editor.inactiveSelectionBackground': '#305dff1a',
+                
+                // Line numbers - white/gray
+                'editorLineNumber.foreground': '#858585',
+                'editorLineNumber.activeForeground': '#5a80ff',
+                
+                // Gutter
+                'editorGutter.background': '#00000000',
+                
+                // Bracket matching
+                'editorBracketMatch.background': '#305dff1a',
+                'editorBracketMatch.border': '#305dff99',
+                
+                // Whitespace
+                'editorWhitespace.foreground': '#464b5d40',
+                
+                // Indent guides
+                'editorIndentGuide.background': '#464b5d40',
+                'editorIndentGuide.activeBackground': '#305dff4d',
+                
+                // Widget colors
+                'editorWidget.background': '#1a1a1a',
+                'editorWidget.border': '#305dff33',
+                'editorSuggestWidget.background': '#1a1a1a',
+                'editorSuggestWidget.border': '#305dff33',
+                'editorSuggestWidget.selectedBackground': '#305dff26',
+                'editorSuggestWidget.highlightForeground': '#5a80ff',
+                'editorSuggestWidget.foreground': '#eeffff',
+                
+                // Scrollbar
+                'scrollbarSlider.background': '#305dff26',
+                'scrollbarSlider.hoverBackground': '#305dff40',
+                'scrollbarSlider.activeBackground': '#305dff66',
+                
+                // Minimap
+                'minimap.background': '#00000000',
+                
+                // Find/replace
+                'editor.findMatchBackground': '#305dff66',
+                'editor.findMatchHighlightBackground': '#305dff33',
+                
+                // Error markers - make overview ruler transparent so no red bar
+                'editorError.foreground': '#ff5370',
+                'editorError.border': '#ff537000',
+                'editorWarning.foreground': '#ffcb6b',
+                'editorWarning.border': '#ffcb6b00',
+                'editorInfo.foreground': '#5a80ff',
+                'editorInfo.border': '#82aaff00',
+                
+                // Overview ruler - transparent to hide the side bar
+                'editorOverviewRuler.errorForeground': '#00000000',
+                'editorOverviewRuler.warningForeground': '#00000000',
+                'editorOverviewRuler.infoForeground': '#00000000',
+                'editorOverviewRuler.background': '#00000000',
+                'editorOverviewRuler.border': '#00000000',
+                'editorGutter.modifiedBackground': '#5a80ff',
+                'editorGutter.addedBackground': '#c3e88d',
+                'editorGutter.deletedBackground': '#ff5370',
+            }
+        });
+
+        monaco.languages.registerCompletionItemProvider('lua', {
+            provideCompletionItems: function(model, position) {
+                var word = model.getWordUntilPosition(position);
+                var range = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endColumn: word.endColumn
+                };
+
+                const suggestions = [
+                    /* === LUA KEYWORDS === */
+                    ...['and','break','do','else','elseif','end','false','for','function','if','in','local','nil','not','or','repeat','return','then','true','until','while'].map(k => ({label: k, kind: 17, insertText: k, range: range, documentation: 'Lua keyword'})),
+                    
+                    /* === ROBLOX EXECUTOR FUNCTIONS === */
+                    { label: 'getgenv', kind: 2, insertText: 'getgenv()', range: range, insertTextRules: 4, documentation: 'Returns the global environment' },
+                    { label: 'getrenv', kind: 2, insertText: 'getrenv()', range: range, insertTextRules: 4, documentation: 'Returns the Roblox environment' },
+                    { label: 'getreg', kind: 2, insertText: 'getreg()', range: range, insertTextRules: 4, documentation: 'Returns the Lua registry' },
+                    { label: 'getgc', kind: 2, insertText: 'getgc(${1:includeTables})', range: range, insertTextRules: 4, documentation: 'Returns all garbage collected objects' },
+                    { label: 'getinstances', kind: 2, insertText: 'getinstances()', range: range, insertTextRules: 4, documentation: 'Returns all instances in the game' },
+                    { label: 'getnilinstances', kind: 2, insertText: 'getnilinstances()', range: range, insertTextRules: 4, documentation: 'Returns all instances parented to nil' },
+                    { label: 'getloadedmodules', kind: 2, insertText: 'getloadedmodules()', range: range, insertTextRules: 4, documentation: 'Returns all loaded ModuleScripts' },
+                    { label: 'getconnections', kind: 2, insertText: 'getconnections(${1:signal})', range: range, insertTextRules: 4, documentation: 'Returns all connections to a signal' },
+                    { label: 'getscripts', kind: 2, insertText: 'getscripts()', range: range, insertTextRules: 4, documentation: 'Returns all scripts in the game' },
+                    { label: 'getcallingscript', kind: 2, insertText: 'getcallingscript()', range: range, insertTextRules: 4, documentation: 'Returns the script that called the function' },
+                    { label: 'getrunningscripts', kind: 2, insertText: 'getrunningscripts()', range: range, insertTextRules: 4, documentation: 'Returns all running scripts' },
+                    { label: 'getscripthash', kind: 2, insertText: 'getscripthash(${1:script})', range: range, insertTextRules: 4, documentation: 'Returns the hash of a script' },
+                    { label: 'getscriptbytecode', kind: 2, insertText: 'getscriptbytecode(${1:script})', range: range, insertTextRules: 4, documentation: 'Returns the bytecode of a script' },
+                    
+                    { label: 'fireclickdetector', kind: 2, insertText: 'fireclickdetector(${1:clickDetector})', range: range, insertTextRules: 4, documentation: 'Fires a ClickDetector' },
+                    { label: 'firetouchinterest', kind: 2, insertText: 'firetouchinterest(${1:part}, ${2:toTouch}, ${3:touch})', range: range, insertTextRules: 4, documentation: 'Fires a touch interest' },
+                    { label: 'fireproximityprompt', kind: 2, insertText: 'fireproximityprompt(${1:prompt})', range: range, insertTextRules: 4, documentation: 'Fires a ProximityPrompt' },
+                    { label: 'firesignal', kind: 2, insertText: 'firesignal(${1:signal}, ${2:...})', range: range, insertTextRules: 4, documentation: 'Fires a signal with arguments' },
+                    
+                    { label: 'isnetworkowner', kind: 2, insertText: 'isnetworkowner(${1:part})', range: range, insertTextRules: 4, documentation: 'Checks if you are network owner of a part' },
+                    { label: 'setsimulationradius', kind: 2, insertText: 'setsimulationradius(${1:radius})', range: range, insertTextRules: 4, documentation: 'Sets the simulation radius' },
+                    
+                    { label: 'gethiddenproperty', kind: 2, insertText: 'gethiddenproperty(${1:instance}, ${2:property})', range: range, insertTextRules: 4, documentation: 'Gets a hidden property' },
+                    { label: 'sethiddenproperty', kind: 2, insertText: 'sethiddenproperty(${1:instance}, ${2:property}, ${3:value})', range: range, insertTextRules: 4, documentation: 'Sets a hidden property' },
+                    { label: 'gethui', kind: 2, insertText: 'gethui()', range: range, insertTextRules: 4, documentation: 'Returns the hidden UI container' },
+                    
+                    { label: 'getrawmetatable', kind: 2, insertText: 'getrawmetatable(${1:object})', range: range, insertTextRules: 4, documentation: 'Gets the raw metatable of an object' },
+                    { label: 'setrawmetatable', kind: 2, insertText: 'setrawmetatable(${1:object}, ${2:metatable})', range: range, insertTextRules: 4, documentation: 'Sets the raw metatable of an object' },
+                    { label: 'setreadonly', kind: 2, insertText: 'setreadonly(${1:table}, ${2:readonly})', range: range, insertTextRules: 4, documentation: 'Sets a table to readonly or not' },
+                    { label: 'isreadonly', kind: 2, insertText: 'isreadonly(${1:table})', range: range, insertTextRules: 4, documentation: 'Checks if a table is readonly' },
+                    { label: 'makewriteable', kind: 2, insertText: 'makewriteable(${1:table})', range: range, insertTextRules: 4, documentation: 'Makes a table writeable' },
+                    { label: 'makereadonly', kind: 2, insertText: 'makereadonly(${1:table})', range: range, insertTextRules: 4, documentation: 'Makes a table readonly' },
+                    
+                    { label: 'hookfunction', kind: 2, insertText: 'hookfunction(${1:original}, ${2:hook})', range: range, insertTextRules: 4, documentation: 'Hooks a function' },
+                    { label: 'hookmetamethod', kind: 2, insertText: 'hookmetamethod(${1:object}, ${2:method}, ${3:hook})', range: range, insertTextRules: 4, documentation: 'Hooks a metamethod' },
+                    { label: 'replaceclosure', kind: 2, insertText: 'replaceclosure(${1:original}, ${2:replacement})', range: range, insertTextRules: 4, documentation: 'Replaces a closure' },
+                    { label: 'newcclosure', kind: 2, insertText: 'newcclosure(${1:func})', range: range, insertTextRules: 4, documentation: 'Creates a new C closure' },
+                    { label: 'islclosure', kind: 2, insertText: 'islclosure(${1:func})', range: range, insertTextRules: 4, documentation: 'Checks if a function is a Lua closure' },
+                    { label: 'iscclosure', kind: 2, insertText: 'iscclosure(${1:func})', range: range, insertTextRules: 4, documentation: 'Checks if a function is a C closure' },
+                    
+                    { label: 'getnamecallmethod', kind: 2, insertText: 'getnamecallmethod()', range: range, insertTextRules: 4, documentation: 'Gets the current namecall method' },
+                    { label: 'setnamecallmethod', kind: 2, insertText: 'setnamecallmethod(${1:method})', range: range, insertTextRules: 4, documentation: 'Sets the namecall method' },
+                    { label: 'checkcaller', kind: 2, insertText: 'checkcaller()', range: range, insertTextRules: 4, documentation: 'Checks if the caller is the executor' },
+                    
+                    { label: 'getthreadidentity', kind: 2, insertText: 'getthreadidentity()', range: range, insertTextRules: 4, documentation: 'Gets the current thread identity level' },
+                    { label: 'setthreadidentity', kind: 2, insertText: 'setthreadidentity(${1:identity})', range: range, insertTextRules: 4, documentation: 'Sets the thread identity level' },
+                    { label: 'getidentity', kind: 2, insertText: 'getidentity()', range: range, insertTextRules: 4, documentation: 'Gets the current identity level' },
+                    { label: 'setidentity', kind: 2, insertText: 'setidentity(${1:identity})', range: range, insertTextRules: 4, documentation: 'Sets the identity level' },
+                    
+                    { label: 'loadstring', kind: 2, insertText: 'loadstring(${1:code})', range: range, insertTextRules: 4, documentation: 'Loads and compiles Lua code' },
+                    { label: 'saveinstance', kind: 2, insertText: 'saveinstance(${1:options})', range: range, insertTextRules: 4, documentation: 'Saves the game instance' },
+                    { label: 'printidentity', kind: 2, insertText: 'printidentity()', range: range, insertTextRules: 4, documentation: 'Prints the current identity level' },
+                    { label: 'identifyexecutor', kind: 2, insertText: 'identifyexecutor()', range: range, insertTextRules: 4, documentation: 'Returns the executor name and version' },
+                    
+                    { label: 'request', kind: 2, insertText: 'request(${1:options})', range: range, insertTextRules: 4, documentation: 'Makes an HTTP request' },
+                    { label: 'http_request', kind: 2, insertText: 'http_request(${1:options})', range: range, insertTextRules: 4, documentation: 'Makes an HTTP request' },
+                    { label: 'syn_request', kind: 2, insertText: 'syn_request(${1:options})', range: range, insertTextRules: 4, documentation: 'Synapse HTTP request' },
+                    
+                    { label: 'readfile', kind: 2, insertText: 'readfile(${1:path})', range: range, insertTextRules: 4, documentation: 'Reads a file' },
+                    { label: 'writefile', kind: 2, insertText: 'writefile(${1:path}, ${2:content})', range: range, insertTextRules: 4, documentation: 'Writes to a file' },
+                    { label: 'appendfile', kind: 2, insertText: 'appendfile(${1:path}, ${2:content})', range: range, insertTextRules: 4, documentation: 'Appends to a file' },
+                    { label: 'deletefile', kind: 2, insertText: 'deletefile(${1:path})', range: range, insertTextRules: 4, documentation: 'Deletes a file' },
+                    { label: 'isfile', kind: 2, insertText: 'isfile(${1:path})', range: range, insertTextRules: 4, documentation: 'Checks if a file exists' },
+                    { label: 'isfolder', kind: 2, insertText: 'isfolder(${1:path})', range: range, insertTextRules: 4, documentation: 'Checks if a folder exists' },
+                    { label: 'makefolder', kind: 2, insertText: 'makefolder(${1:path})', range: range, insertTextRules: 4, documentation: 'Creates a folder' },
+                    { label: 'listfiles', kind: 2, insertText: 'listfiles(${1:path})', range: range, insertTextRules: 4, documentation: 'Lists files in a folder' },
+                    
+                    { label: 'setclipboard', kind: 2, insertText: 'setclipboard(${1:text})', range: range, insertTextRules: 4, documentation: 'Sets the clipboard content' },
+                    { label: 'getclipboard', kind: 2, insertText: 'getclipboard()', range: range, insertTextRules: 4, documentation: 'Gets the clipboard content' },
+                    
+                    { label: 'Drawing.new', kind: 2, insertText: 'Drawing.new(${1:"Line"})', range: range, insertTextRules: 4, documentation: 'Creates a new drawing object' },
+                    
+                    /* === ROBLOX SERVICES === */
+                    ...['Workspace','Players','Lighting','ReplicatedFirst','ReplicatedStorage','ServerScriptService','ServerStorage','StarterGui','StarterPack','StarterPlayer','SoundService','Chat','Teams','TestService','TweenService','HttpService','RunService','UserInputService','ContextActionService','GuiService','LogService','Stats','NetworkClient','NetworkServer','MarketplaceService','TeleportService','TextService','AssetService','BadgeService','CollectionService','DataStoreService','PathfindingService','Selection','ProximityPromptService','VRService','HapticService','LocalizationService','PolicyService','PointsService','SocialService','GroupService','InsertService','KeyframeSequenceProvider','StarterPlayerScripts','StarterCharacterScripts','ContentProvider','Debris','PhysicsService','VirtualUser','VirtualInputManager','MouseService','KeyboardService','TouchInputService','GamepadService','MemStorageService','ScriptContext','AnimationController','Humanoid','AnimationTrack','Animator','ClickDetector','ProximityPrompt'].map(s => ({
+                        label: s, 
+                        kind: 6, 
+                        insertText: `game:GetService("${s}")`, 
+                        range: range,
+                        documentation: `Gets the ${s} service`
+                    })),
+                    
+                    /* === MATH LIBRARY === */
+                    ...['abs','acos','asin','atan','atan2','ceil','clamp','cos','cosh','deg','exp','floor','fmod','frexp','huge','ldexp','log','log10','max','min','modf','pi','pow','rad','random','randomseed','round','sign','sin','sinh','sqrt','tan','tanh','noise'].map(m => ({
+                        label: `math.${m}`, 
+                        kind: 1, 
+                        insertText: m === 'pi' || m === 'huge' ? `math.${m}` : `math.${m}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `Math function: ${m}`
+                    })),
+                    
+                    /* === TABLE LIBRARY === */
+                    ...['concat','insert','remove','sort','unpack','pack','find','clear','move','create','freeze','isfrozen','getn','foreach','foreachi','maxn'].map(t => ({
+                        label: `table.${t}`, 
+                        kind: 1, 
+                        insertText: `table.${t}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `Table function: ${t}`
+                    })),
+                    
+                    /* === STRING LIBRARY === */
+                    ...['byte','char','dump','find','format','gmatch','gsub','len','lower','match','rep','reverse','sub','upper','split','pack','packsize','unpack'].map(s => ({
+                        label: `string.${s}`, 
+                        kind: 1, 
+                        insertText: `string.${s}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `String function: ${s}`
+                    })),
+                    
+                    /* === TASK LIBRARY === */
+                    ...['wait','spawn','delay','defer','cancel','desynchronize','synchronize'].map(t => ({
+                        label: `task.${t}`, 
+                        kind: 1, 
+                        insertText: `task.${t}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `Task function: ${t}`
+                    })),
+                    
+                    /* === DEBUG LIBRARY === */
+                    ...['debug','gethook','getinfo','getlocal','getmetatable','getregistry','getupvalue','getuservalue','sethook','setlocal','setmetatable','setupvalue','setuservalue','traceback','upvalueid','upvaluejoin','profilebegin','profileend','setmemorycategory','resetmemorycategory'].map(d => ({
+                        label: `debug.${d}`, 
+                        kind: 1, 
+                        insertText: `debug.${d}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `Debug function: ${d}`
+                    })),
+                    
+                    /* === OS LIBRARY === */
+                    ...['clock','date','difftime','time'].map(o => ({
+                        label: `os.${o}`, 
+                        kind: 1, 
+                        insertText: `os.${o}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `OS function: ${o}`
+                    })),
+                    
+                    /* === COROUTINE LIBRARY === */
+                    ...['create','resume','running','status','wrap','yield','close','isyieldable'].map(c => ({
+                        label: `coroutine.${c}`, 
+                        kind: 1, 
+                        insertText: `coroutine.${c}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `Coroutine function: ${c}`
+                    })),
+                    
+                    /* === UTF8 LIBRARY === */
+                    ...['char','charpattern','codes','codepoint','len','offset','graphemes','nfcnormalize','nfdnormalize'].map(u => ({
+                        label: `utf8.${u}`, 
+                        kind: 1, 
+                        insertText: u === 'charpattern' ? `utf8.${u}` : `utf8.${u}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `UTF8 function: ${u}`
+                    })),
+                    
+                    /* === BUFFER LIBRARY === */
+                    ...['create','fromstring','tostring','len','copy','fill','readi8','readu8','readi16','readu16','readi32','readu32','readf32','readf64','writei8','writeu8','writei16','writeu16','writei32','writeu32','writef32','writef64','readstring','writestring'].map(b => ({
+                        label: `buffer.${b}`, 
+                        kind: 1, 
+                        insertText: `buffer.${b}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `Buffer function: ${b}`
+                    })),
+                    
+                    /* === ROBLOX DATA TYPES === */
+                    { label: 'Vector3.new', kind: 12, insertText: 'Vector3.new(${1:x}, ${2:y}, ${3:z})', range: range, insertTextRules: 4, documentation: 'Creates a new Vector3' },
+                    { label: 'Vector3.zero', kind: 12, insertText: 'Vector3.zero', range: range, documentation: 'Vector3 with all components as 0' },
+                    { label: 'Vector3.one', kind: 12, insertText: 'Vector3.one', range: range, documentation: 'Vector3 with all components as 1' },
+                    { label: 'Vector3.xAxis', kind: 12, insertText: 'Vector3.xAxis', range: range, documentation: 'Unit vector along X axis' },
+                    { label: 'Vector3.yAxis', kind: 12, insertText: 'Vector3.yAxis', range: range, documentation: 'Unit vector along Y axis' },
+                    { label: 'Vector3.zAxis', kind: 12, insertText: 'Vector3.zAxis', range: range, documentation: 'Unit vector along Z axis' },
+                    
+                    { label: 'Vector2.new', kind: 12, insertText: 'Vector2.new(${1:x}, ${2:y})', range: range, insertTextRules: 4, documentation: 'Creates a new Vector2' },
+                    { label: 'Vector2.zero', kind: 12, insertText: 'Vector2.zero', range: range, documentation: 'Vector2 with all components as 0' },
+                    { label: 'Vector2.one', kind: 12, insertText: 'Vector2.one', range: range, documentation: 'Vector2 with all components as 1' },
+                    { label: 'Vector2.xAxis', kind: 12, insertText: 'Vector2.xAxis', range: range, documentation: 'Unit vector along X axis' },
+                    { label: 'Vector2.yAxis', kind: 12, insertText: 'Vector2.yAxis', range: range, documentation: 'Unit vector along Y axis' },
+                    
+                    { label: 'CFrame.new', kind: 12, insertText: 'CFrame.new(${1:x}, ${2:y}, ${3:z})', range: range, insertTextRules: 4, documentation: 'Creates a new CFrame' },
+                    { label: 'CFrame.Angles', kind: 12, insertText: 'CFrame.Angles(${1:rx}, ${2:ry}, ${3:rz})', range: range, insertTextRules: 4, documentation: 'Creates a rotated CFrame' },
+                    { label: 'CFrame.fromEulerAnglesXYZ', kind: 12, insertText: 'CFrame.fromEulerAnglesXYZ(${1:rx}, ${2:ry}, ${3:rz})', range: range, insertTextRules: 4, documentation: 'Creates CFrame from Euler angles' },
+                    { label: 'CFrame.fromEulerAnglesYXZ', kind: 12, insertText: 'CFrame.fromEulerAnglesYXZ(${1:rx}, ${2:ry}, ${3:rz})', range: range, insertTextRules: 4, documentation: 'Creates CFrame from Euler angles YXZ' },
+                    { label: 'CFrame.fromOrientation', kind: 12, insertText: 'CFrame.fromOrientation(${1:rx}, ${2:ry}, ${3:rz})', range: range, insertTextRules: 4, documentation: 'Creates CFrame from orientation' },
+                    { label: 'CFrame.fromAxisAngle', kind: 12, insertText: 'CFrame.fromAxisAngle(${1:v}, ${2:r})', range: range, insertTextRules: 4, documentation: 'Creates CFrame from axis and angle' },
+                    { label: 'CFrame.fromMatrix', kind: 12, insertText: 'CFrame.fromMatrix(${1:pos}, ${2:vX}, ${3:vY}, ${4:vZ})', range: range, insertTextRules: 4, documentation: 'Creates CFrame from matrix' },
+                    { label: 'CFrame.lookAt', kind: 12, insertText: 'CFrame.lookAt(${1:eye}, ${2:target})', range: range, insertTextRules: 4, documentation: 'Creates CFrame looking at target' },
+                    { label: 'CFrame.identity', kind: 12, insertText: 'CFrame.identity', range: range, documentation: 'Identity CFrame' },
+                    
+                    { label: 'Color3.new', kind: 12, insertText: 'Color3.new(${1:r}, ${2:g}, ${3:b})', range: range, insertTextRules: 4, documentation: 'Creates a new Color3 (0-1 range)' },
+                    { label: 'Color3.fromRGB', kind: 12, insertText: 'Color3.fromRGB(${1:r}, ${2:g}, ${3:b})', range: range, insertTextRules: 4, documentation: 'Creates a new Color3 from RGB (0-255)' },
+                    { label: 'Color3.fromHSV', kind: 12, insertText: 'Color3.fromHSV(${1:h}, ${2:s}, ${3:v})', range: range, insertTextRules: 4, documentation: 'Creates a new Color3 from HSV' },
+                    { label: 'Color3.fromHex', kind: 12, insertText: 'Color3.fromHex(${1:hex})', range: range, insertTextRules: 4, documentation: 'Creates a new Color3 from hex string' },
+                    
+                    { label: 'UDim2.new', kind: 12, insertText: 'UDim2.new(${1:xScale}, ${2:xOffset}, ${3:yScale}, ${4:yOffset})', range: range, insertTextRules: 4, documentation: 'Creates a new UDim2' },
+                    { label: 'UDim2.fromScale', kind: 12, insertText: 'UDim2.fromScale(${1:x}, ${2:y})', range: range, insertTextRules: 4, documentation: 'Creates UDim2 from scale' },
+                    { label: 'UDim2.fromOffset', kind: 12, insertText: 'UDim2.fromOffset(${1:x}, ${2:y})', range: range, insertTextRules: 4, documentation: 'Creates UDim2 from offset' },
+                    
+                    { label: 'UDim.new', kind: 12, insertText: 'UDim.new(${1:scale}, ${2:offset})', range: range, insertTextRules: 4, documentation: 'Creates a new UDim' },
+                    
+                    { label: 'Instance.new', kind: 12, insertText: 'Instance.new("${1:ClassName}")', range: range, insertTextRules: 4, documentation: 'Creates a new Instance' },
+                    
+                    { label: 'TweenInfo.new', kind: 12, insertText: 'TweenInfo.new(${1:time})', range: range, insertTextRules: 4, documentation: 'Creates TweenInfo' },
+                    
+                    { label: 'NumberSequence.new', kind: 12, insertText: 'NumberSequence.new(${1:n})', range: range, insertTextRules: 4, documentation: 'Creates NumberSequence' },
+                    { label: 'NumberSequenceKeypoint.new', kind: 12, insertText: 'NumberSequenceKeypoint.new(${1:time}, ${2:value})', range: range, insertTextRules: 4, documentation: 'Creates NumberSequenceKeypoint' },
+                    
+                    { label: 'ColorSequence.new', kind: 12, insertText: 'ColorSequence.new(${1:color})', range: range, insertTextRules: 4, documentation: 'Creates ColorSequence' },
+                    { label: 'ColorSequenceKeypoint.new', kind: 12, insertText: 'ColorSequenceKeypoint.new(${1:time}, ${2:color})', range: range, insertTextRules: 4, documentation: 'Creates ColorSequenceKeypoint' },
+                    
+                    { label: 'NumberRange.new', kind: 12, insertText: 'NumberRange.new(${1:min}, ${2:max})', range: range, insertTextRules: 4, documentation: 'Creates NumberRange' },
+                    
+                    { label: 'Rect.new', kind: 12, insertText: 'Rect.new(${1:x}, ${2:y}, ${3:width}, ${4:height})', range: range, insertTextRules: 4, documentation: 'Creates Rect' },
+                    
+                    { label: 'Ray.new', kind: 12, insertText: 'Ray.new(${1:origin}, ${2:direction})', range: range, insertTextRules: 4, documentation: 'Creates Ray' },
+                    
+                    { label: 'RaycastParams.new', kind: 12, insertText: 'RaycastParams.new()', range: range, insertTextRules: 4, documentation: 'Creates RaycastParams' },
+                    
+                    { label: 'Region3.new', kind: 12, insertText: 'Region3.new(${1:min}, ${2:max})', range: range, insertTextRules: 4, documentation: 'Creates Region3' },
+                    
+                    { label: 'Faces.new', kind: 12, insertText: 'Faces.new()', range: range, insertTextRules: 4, documentation: 'Creates Faces' },
+                    
+                    { label: 'Axes.new', kind: 12, insertText: 'Axes.new()', range: range, insertTextRules: 4, documentation: 'Creates Axes' },
+                    
+                    { label: 'BrickColor.new', kind: 12, insertText: 'BrickColor.new("${1:color}")', range: range, insertTextRules: 4, documentation: 'Creates BrickColor' },
+                    { label: 'BrickColor.random', kind: 12, insertText: 'BrickColor.random()', range: range, insertTextRules: 4, documentation: 'Random BrickColor' },
+                    { label: 'BrickColor.White', kind: 12, insertText: 'BrickColor.White()', range: range, insertTextRules: 4, documentation: 'White BrickColor' },
+                    { label: 'BrickColor.Gray', kind: 12, insertText: 'BrickColor.Gray()', range: range, insertTextRules: 4, documentation: 'Gray BrickColor' },
+                    { label: 'BrickColor.Black', kind: 12, insertText: 'BrickColor.Black()', range: range, insertTextRules: 4, documentation: 'Black BrickColor' },
+                    { label: 'BrickColor.Red', kind: 12, insertText: 'BrickColor.Red()', range: range, insertTextRules: 4, documentation: 'Red BrickColor' },
+                    { label: 'BrickColor.Yellow', kind: 12, insertText: 'BrickColor.Yellow()', range: range, insertTextRules: 4, documentation: 'Yellow BrickColor' },
+                    { label: 'BrickColor.Green', kind: 12, insertText: 'BrickColor.Green()', range: range, insertTextRules: 4, documentation: 'Green BrickColor' },
+                    { label: 'BrickColor.Blue', kind: 12, insertText: 'BrickColor.Blue()', range: range, insertTextRules: 4, documentation: 'Blue BrickColor' },
+                    
+                    /* === COMMON ROBLOX BRICK COLORS === */
+                    ...['White','Grey','Light grey','Black','Really black','Institutional white','Mid gray','Medium stone grey','Dark stone grey','Really red','Red','Deep orange','Brick yellow','New Yeller','Cool yellow','Lime green','Camo','Grime','Medium green','Br. yellowish green','Earth green','Bright green','Dark green','Forest green','Sea green','Teal','Cyan','Light blue','Pastel Blue','Bright blue','Navy blue','Dark blue','Medium blue','Sand blue','Steel blue','Storm blue','Lapis','Dark indigo','Bright violet','Bright purple','Light purple','Medium lilac','Bright reddish lilac','Lavender','Pink','Hot pink','Magenta','Really blue','Alder','Dusty Rose','Olive','New Yeller','Bright bluish green','Earth orange','Earth yellow','Bright orange','Nougat','Medium red','Bright red','Rust','Reddish brown','CGA brown','Royal purple','Lilac','Plum','Mulberry','Eggplant','Persimmon','Burgundy','Dark red','Burnt Sienna'].map(c => ({
+                        label: `BrickColor.new("${c}")`,
+                        kind: 12,
+                        insertText: `BrickColor.new("${c}")`,
+                        range: range,
+                        documentation: `BrickColor: ${c}`
+                    })),
+                    
+                    /* === COLOR3 PRESETS - GRAYS === */
+                    { label: 'Color3.fromRGB(0, 0, 0)', kind: 12, insertText: 'Color3.fromRGB(0, 0, 0)', range: range, documentation: 'Pure Black' },
+                    { label: 'Color3.fromRGB(26, 26, 26)', kind: 12, insertText: 'Color3.fromRGB(26, 26, 26)', range: range, documentation: 'Very Dark Gray' },
+                    { label: 'Color3.fromRGB(42, 42, 42)', kind: 12, insertText: 'Color3.fromRGB(42, 42, 42)', range: range, documentation: 'Dark Gray' },
+                    { label: 'Color3.fromRGB(66, 66, 66)', kind: 12, insertText: 'Color3.fromRGB(66, 66, 66)', range: range, documentation: 'Medium Dark Gray' },
+                    { label: 'Color3.fromRGB(97, 97, 97)', kind: 12, insertText: 'Color3.fromRGB(97, 97, 97)', range: range, documentation: 'Medium Gray' },
+                    { label: 'Color3.fromRGB(128, 128, 128)', kind: 12, insertText: 'Color3.fromRGB(128, 128, 128)', range: range, documentation: 'Gray' },
+                    { label: 'Color3.fromRGB(158, 158, 158)', kind: 12, insertText: 'Color3.fromRGB(158, 158, 158)', range: range, documentation: 'Light Gray' },
+                    { label: 'Color3.fromRGB(189, 189, 189)', kind: 12, insertText: 'Color3.fromRGB(189, 189, 189)', range: range, documentation: 'Very Light Gray' },
+                    { label: 'Color3.fromRGB(224, 224, 224)', kind: 12, insertText: 'Color3.fromRGB(224, 224, 224)', range: range, documentation: 'Almost White' },
+                    { label: 'Color3.fromRGB(255, 255, 255)', kind: 12, insertText: 'Color3.fromRGB(255, 255, 255)', range: range, documentation: 'Pure White' },
+                    
+                    /* === COLOR3 PRESETS - REDS === */
+                    { label: 'Color3.fromRGB(139, 0, 0)', kind: 12, insertText: 'Color3.fromRGB(139, 0, 0)', range: range, documentation: 'Dark Red' },
+                    { label: 'Color3.fromRGB(178, 34, 34)', kind: 12, insertText: 'Color3.fromRGB(178, 34, 34)', range: range, documentation: 'Firebrick' },
+                    { label: 'Color3.fromRGB(220, 20, 60)', kind: 12, insertText: 'Color3.fromRGB(220, 20, 60)', range: range, documentation: 'Crimson' },
+                    { label: 'Color3.fromRGB(255, 0, 0)', kind: 12, insertText: 'Color3.fromRGB(255, 0, 0)', range: range, documentation: 'Pure Red' },
+                    { label: 'Color3.fromRGB(255, 99, 71)', kind: 12, insertText: 'Color3.fromRGB(255, 99, 71)', range: range, documentation: 'Tomato' },
+                    { label: 'Color3.fromRGB(255, 107, 107)', kind: 12, insertText: 'Color3.fromRGB(255, 107, 107)', range: range, documentation: 'Light Red' },
+                    { label: 'Color3.fromRGB(255, 69, 0)', kind: 12, insertText: 'Color3.fromRGB(255, 69, 0)', range: range, documentation: 'Red Orange' },
+                    { label: 'Color3.fromRGB(255, 140, 0)', kind: 12, insertText: 'Color3.fromRGB(255, 140, 0)', range: range, documentation: 'Dark Orange' },
+                    { label: 'Color3.fromRGB(255, 165, 0)', kind: 12, insertText: 'Color3.fromRGB(255, 165, 0)', range: range, documentation: 'Orange' },
+                    
+                    /* === COLOR3 PRESETS - BLUES === */
+                    { label: 'Color3.fromRGB(0, 0, 139)', kind: 12, insertText: 'Color3.fromRGB(0, 0, 139)', range: range, documentation: 'Dark Blue' },
+                    { label: 'Color3.fromRGB(0, 0, 205)', kind: 12, insertText: 'Color3.fromRGB(0, 0, 205)', range: range, documentation: 'Medium Blue' },
+                    { label: 'Color3.fromRGB(0, 0, 255)', kind: 12, insertText: 'Color3.fromRGB(0, 0, 255)', range: range, documentation: 'Pure Blue' },
+                    { label: 'Color3.fromRGB(30, 144, 255)', kind: 12, insertText: 'Color3.fromRGB(30, 144, 255)', range: range, documentation: 'Dodger Blue' },
+                    { label: 'Color3.fromRGB(79, 195, 247)', kind: 12, insertText: 'Color3.fromRGB(79, 195, 247)', range: range, documentation: 'Light Blue' },
+                    { label: 'Color3.fromRGB(135, 206, 250)', kind: 12, insertText: 'Color3.fromRGB(135, 206, 250)', range: range, documentation: 'Sky Blue' },
+                    { label: 'Color3.fromRGB(0, 191, 255)', kind: 12, insertText: 'Color3.fromRGB(0, 191, 255)', range: range, documentation: 'Deep Sky Blue' },
+                    { label: 'Color3.fromRGB(0, 206, 209)', kind: 12, insertText: 'Color3.fromRGB(0, 206, 209)', range: range, documentation: 'Turquoise' },
+                    { label: 'Color3.fromRGB(0, 255, 255)', kind: 12, insertText: 'Color3.fromRGB(0, 255, 255)', range: range, documentation: 'Cyan' },
+                    
+                    /* === COLOR3 PRESETS - GREENS === */
+                    { label: 'Color3.fromRGB(0, 100, 0)', kind: 12, insertText: 'Color3.fromRGB(0, 100, 0)', range: range, documentation: 'Dark Green' },
+                    { label: 'Color3.fromRGB(0, 128, 0)', kind: 12, insertText: 'Color3.fromRGB(0, 128, 0)', range: range, documentation: 'Green' },
+                    { label: 'Color3.fromRGB(0, 255, 0)', kind: 12, insertText: 'Color3.fromRGB(0, 255, 0)', range: range, documentation: 'Lime' },
+                    { label: 'Color3.fromRGB(34, 139, 34)', kind: 12, insertText: 'Color3.fromRGB(34, 139, 34)', range: range, documentation: 'Forest Green' },
+                    { label: 'Color3.fromRGB(50, 205, 50)', kind: 12, insertText: 'Color3.fromRGB(50, 205, 50)', range: range, documentation: 'Lime Green' },
+                    { label: 'Color3.fromRGB(124, 252, 0)', kind: 12, insertText: 'Color3.fromRGB(124, 252, 0)', range: range, documentation: 'Lawn Green' },
+                    { label: 'Color3.fromRGB(165, 214, 167)', kind: 12, insertText: 'Color3.fromRGB(165, 214, 167)', range: range, documentation: 'Light Green' },
+                    { label: 'Color3.fromRGB(0, 255, 127)', kind: 12, insertText: 'Color3.fromRGB(0, 255, 127)', range: range, documentation: 'Spring Green' },
+                    
+                    /* === COLOR3 PRESETS - YELLOWS === */
+                    { label: 'Color3.fromRGB(255, 255, 0)', kind: 12, insertText: 'Color3.fromRGB(255, 255, 0)', range: range, documentation: 'Yellow' },
+                    { label: 'Color3.fromRGB(255, 215, 0)', kind: 12, insertText: 'Color3.fromRGB(255, 215, 0)', range: range, documentation: 'Gold' },
+                    { label: 'Color3.fromRGB(255, 213, 79)', kind: 12, insertText: 'Color3.fromRGB(255, 213, 79)', range: range, documentation: 'Light Yellow' },
+                    { label: 'Color3.fromRGB(255, 235, 59)', kind: 12, insertText: 'Color3.fromRGB(255, 235, 59)', range: range, documentation: 'Bright Yellow' },
+                    { label: 'Color3.fromRGB(255, 193, 7)', kind: 12, insertText: 'Color3.fromRGB(255, 193, 7)', range: range, documentation: 'Amber' },
+                    
+                    /* === COLOR3 PRESETS - PURPLES/PINKS === */
+                    { label: 'Color3.fromRGB(128, 0, 128)', kind: 12, insertText: 'Color3.fromRGB(128, 0, 128)', range: range, documentation: 'Purple' },
+                    { label: 'Color3.fromRGB(186, 104, 200)', kind: 12, insertText: 'Color3.fromRGB(186, 104, 200)', range: range, documentation: 'Light Purple' },
+                    { label: 'Color3.fromRGB(138, 43, 226)', kind: 12, insertText: 'Color3.fromRGB(138, 43, 226)', range: range, documentation: 'Blue Violet' },
+                    { label: 'Color3.fromRGB(147, 51, 234)', kind: 12, insertText: 'Color3.fromRGB(147, 51, 234)', range: range, documentation: 'Vivid Purple' },
+                    { label: 'Color3.fromRGB(255, 0, 255)', kind: 12, insertText: 'Color3.fromRGB(255, 0, 255)', range: range, documentation: 'Magenta' },
+                    { label: 'Color3.fromRGB(255, 20, 147)', kind: 12, insertText: 'Color3.fromRGB(255, 20, 147)', range: range, documentation: 'Deep Pink' },
+                    { label: 'Color3.fromRGB(255, 105, 180)', kind: 12, insertText: 'Color3.fromRGB(255, 105, 180)', range: range, documentation: 'Hot Pink' },
+                    { label: 'Color3.fromRGB(255, 192, 203)', kind: 12, insertText: 'Color3.fromRGB(255, 192, 203)', range: range, documentation: 'Pink' },
+                    
+                    { label: 'Random.new', kind: 12, insertText: 'Random.new()', range: range, insertTextRules: 4, documentation: 'Creates Random' },
+                    
+                    { label: 'OverlapParams.new', kind: 12, insertText: 'OverlapParams.new()', range: range, insertTextRules: 4, documentation: 'Creates OverlapParams' },
+                    
+                    /* === INSTANCE METHODS === */
+                    ...['Clone','Destroy','ClearAllChildren','FindFirstAncestor','FindFirstAncestorOfClass','FindFirstAncestorWhichIsA','FindFirstChild','FindFirstChildOfClass','FindFirstChildWhichIsA','FindFirstDescendant','GetActor','GetAttribute','GetAttributes','GetChildren','GetDebugId','GetDescendants','GetFullName','GetPropertyChangedSignal','GetTags','HasTag','IsA','IsAncestorOf','IsDescendantOf','SetAttribute','WaitForChild','GetService'].map(m => ({
+                        label: m, 
+                        kind: 2, 
+                        insertText: `${m}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `Instance method: ${m}`
+                    })),
+                    
+                    /* === COMMON ROBLOX CLASSES === */
+                    ...['Part','MeshPart','WedgePart','CornerWedgePart','TrussPart','UnionOperation','NegateOperation','Model','Tool','Folder','Attachment','Beam','Trail','ParticleEmitter','Fire','Smoke','Sparkles','PointLight','SpotLight','SurfaceLight','Sound','SoundGroup','Decal','Texture','SurfaceGui','BillboardGui','ScreenGui','Frame','ScrollingFrame','TextLabel','TextButton','TextBox','ImageLabel','ImageButton','ViewportFrame','VideoFrame','UICorner','UIStroke','UIGradient','UIPadding','UIListLayout','UIGridLayout','UIPageLayout','UITableLayout','UISizeConstraint','UIAspectRatioConstraint','UIScale','RemoteEvent','RemoteFunction','BindableEvent','BindableFunction','ObjectValue','StringValue','IntValue','NumberValue','BoolValue','Vector3Value','CFrameValue','Color3Value','BrickColorValue','Script','LocalScript','ModuleScript','Animation','KeyframeSequence','Keyframe','Pose','Motor6D','Weld','WeldConstraint','RopeConstraint','SpringConstraint','RodConstraint','HingeConstraint','BallSocketConstraint','UniversalConstraint','CylindricalConstraint','PrismaticConstraint','AlignOrientation','AlignPosition','VectorForce','Torque','LineForce','Camera','Humanoid','HumanoidDescription','BodyPosition','BodyGyro','BodyVelocity','BodyAngularVelocity','BodyForce','BodyThrust','RocketPropulsion','Configuration','IntConstrainedValue','StringConstrainedValue','Player','Team','ProximityPrompt','ClickDetector','VehicleSeat','Seat','SpawnLocation','Flag','FlagStand','Sky','Atmosphere','Clouds','Terrain','TerrainRegion'].map(c => ({
+                        label: c, 
+                        kind: 5, 
+                        insertText: c, 
+                        range: range,
+                        documentation: `Roblox class: ${c}`
+                    })),
+                    
+                    /* === ENUMS === */
+                    { label: 'Enum.Material', kind: 13, insertText: 'Enum.Material.${1:Plastic}', range: range, insertTextRules: 4, documentation: 'Material enum' },
+                    { label: 'Enum.PartType', kind: 13, insertText: 'Enum.PartType.${1:Block}', range: range, insertTextRules: 4, documentation: 'PartType enum' },
+                    { label: 'Enum.FormFactor', kind: 13, insertText: 'Enum.FormFactor.${1:Symmetric}', range: range, insertTextRules: 4, documentation: 'FormFactor enum' },
+                    { label: 'Enum.KeyCode', kind: 13, insertText: 'Enum.KeyCode.${1:Space}', range: range, insertTextRules: 4, documentation: 'KeyCode enum' },
+                    { label: 'Enum.UserInputType', kind: 13, insertText: 'Enum.UserInputType.${1:MouseButton1}', range: range, insertTextRules: 4, documentation: 'UserInputType enum' },
+                    { label: 'Enum.NormalId', kind: 13, insertText: 'Enum.NormalId.${1:Top}', range: range, insertTextRules: 4, documentation: 'NormalId enum' },
+                    { label: 'Enum.Axis', kind: 13, insertText: 'Enum.Axis.${1:X}', range: range, insertTextRules: 4, documentation: 'Axis enum' },
+                    { label: 'Enum.EasingDirection', kind: 13, insertText: 'Enum.EasingDirection.${1:InOut}', range: range, insertTextRules: 4, documentation: 'EasingDirection enum' },
+                    { label: 'Enum.EasingStyle', kind: 13, insertText: 'Enum.EasingStyle.${1:Linear}', range: range, insertTextRules: 4, documentation: 'EasingStyle enum' },
+                    { label: 'Enum.HumanoidRigType', kind: 13, insertText: 'Enum.HumanoidRigType.${1:R15}', range: range, insertTextRules: 4, documentation: 'HumanoidRigType enum' },
+                    { label: 'Enum.HumanoidStateType', kind: 13, insertText: 'Enum.HumanoidStateType.${1:Running}', range: range, insertTextRules: 4, documentation: 'HumanoidStateType enum' },
+                    
+                    /* === GLOBAL FUNCTIONS === */
+                    { label: 'print', kind: 2, insertText: 'print($0)', range: range, insertTextRules: 4, documentation: 'Prints to output' },
+                    { label: 'warn', kind: 2, insertText: 'warn($0)', range: range, insertTextRules: 4, documentation: 'Prints warning to output' },
+                    { label: 'error', kind: 2, insertText: 'error(${1:message})', range: range, insertTextRules: 4, documentation: 'Throws an error' },
+                    { label: 'assert', kind: 2, insertText: 'assert(${1:condition}, ${2:message})', range: range, insertTextRules: 4, documentation: 'Asserts a condition' },
+                    { label: 'typeof', kind: 2, insertText: 'typeof(${1:object})', range: range, insertTextRules: 4, documentation: 'Returns Roblox type' },
+                    { label: 'type', kind: 2, insertText: 'type(${1:object})', range: range, insertTextRules: 4, documentation: 'Returns Lua type' },
+                    { label: 'tonumber', kind: 2, insertText: 'tonumber(${1:value})', range: range, insertTextRules: 4, documentation: 'Converts to number' },
+                    { label: 'tostring', kind: 2, insertText: 'tostring(${1:value})', range: range, insertTextRules: 4, documentation: 'Converts to string' },
+                    { label: 'next', kind: 2, insertText: 'next(${1:table}, ${2:index})', range: range, insertTextRules: 4, documentation: 'Gets next table index' },
+                    { label: 'pairs', kind: 2, insertText: 'pairs(${1:table})', range: range, insertTextRules: 4, documentation: 'Iterates over table' },
+                    { label: 'ipairs', kind: 2, insertText: 'ipairs(${1:table})', range: range, insertTextRules: 4, documentation: 'Iterates over array' },
+                    { label: 'pcall', kind: 2, insertText: 'pcall(${1:func}, ${2:...})', range: range, insertTextRules: 4, documentation: 'Protected call' },
+                    { label: 'xpcall', kind: 2, insertText: 'xpcall(${1:func}, ${2:errorHandler})', range: range, insertTextRules: 4, documentation: 'Extended protected call' },
+                    { label: 'select', kind: 2, insertText: 'select(${1:index}, ${2:...})', range: range, insertTextRules: 4, documentation: 'Selects arguments' },
+                    { label: 'getmetatable', kind: 2, insertText: 'getmetatable(${1:object})', range: range, insertTextRules: 4, documentation: 'Gets metatable' },
+                    { label: 'setmetatable', kind: 2, insertText: 'setmetatable(${1:table}, ${2:metatable})', range: range, insertTextRules: 4, documentation: 'Sets metatable' },
+                    { label: 'rawget', kind: 2, insertText: 'rawget(${1:table}, ${2:index})', range: range, insertTextRules: 4, documentation: 'Raw table get' },
+                    { label: 'rawset', kind: 2, insertText: 'rawset(${1:table}, ${2:index}, ${3:value})', range: range, insertTextRules: 4, documentation: 'Raw table set' },
+                    { label: 'rawequal', kind: 2, insertText: 'rawequal(${1:a}, ${2:b})', range: range, insertTextRules: 4, documentation: 'Raw equality check' },
+                    { label: 'rawlen', kind: 2, insertText: 'rawlen(${1:object})', range: range, insertTextRules: 4, documentation: 'Raw length' },
+                    { label: 'require', kind: 2, insertText: 'require(${1:module})', range: range, insertTextRules: 4, documentation: 'Requires a module' },
+                    { label: 'wait', kind: 2, insertText: 'wait(${1:time})', range: range, insertTextRules: 4, documentation: 'Deprecated: use task.wait' },
+                    { label: 'spawn', kind: 2, insertText: 'spawn(${1:func})', range: range, insertTextRules: 4, documentation: 'Deprecated: use task.spawn' },
+                    { label: 'delay', kind: 2, insertText: 'delay(${1:time}, ${2:func})', range: range, insertTextRules: 4, documentation: 'Deprecated: use task.delay' },
+                    
+                    /* === GLOBAL VARIABLES === */
+                    { label: '_G', kind: 4, insertText: '_G', range: range, documentation: 'Global environment table' },
+                    { label: '_VERSION', kind: 4, insertText: '_VERSION', range: range, documentation: 'Lua version string' },
+                    { label: 'game', kind: 4, insertText: 'game', range: range, documentation: 'The DataModel/game object' },
+                    { label: 'workspace', kind: 4, insertText: 'workspace', range: range, documentation: 'Alias for game.Workspace' },
+                    { label: 'script', kind: 4, insertText: 'script', range: range, documentation: 'Current script instance' },
+                    { label: 'shared', kind: 4, insertText: 'shared', range: range, documentation: 'Shared table across scripts' },
+                    
+                    /* === BIT32 LIBRARY === */
+                    ...['arshift','band','bnot','bor','btest','bxor','extract','lrotate','lshift','replace','rrotate','rshift'].map(b => ({
+                        label: `bit32.${b}`, 
+                        kind: 1, 
+                        insertText: `bit32.${b}($0)`, 
+                        range: range, 
+                        insertTextRules: 4,
+                        documentation: `Bit32 function: ${b}`
+                    })),
+                ];
+
+                return { suggestions: suggestions };
+            }
+        });
+
+        editor = monaco.editor.create(document.getElementById('monaco-container'), {
+            value: '',
+            language: 'lua',
+            theme: 'dark-theme',
+            automaticLayout: true,
+            
+            minimap: {
+                enabled: settings.minimapEnabled
+            },
+
+          padding: {
+            top: 10,
+            bottom: 0
+          },
+          
+            find: {
+                addExtraSpaceOnTop: true,
+                autoFindInSelection: 'never',
+                seedSearchStringFromSelection: 'always'
+            },
+            
+            // Error handling
+            'semanticHighlighting.enabled': true,
+            renderValidationDecorations: 'on',
+            
+            wordWrap: settings.wordWrapEnabled ? "on" : "off",
+            smoothScrolling: true,
+            cursorSmoothCaretAnimation: "on",
+            mouseWheelZoom: true,
+            fontSize: 14,
+            lineHeight: 21,
+            fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+            
+            // Scrollbar
+            scrollbar: {
+                vertical: 'visible',
+                horizontal: 'visible',
+                useShadows: false,
+                verticalScrollbarSize: 8,
+                horizontalScrollbarSize: 8
+            },
+
+            // Hide overview ruler (the red bar on the right)
+            overviewRulerLanes: 0,
+            overviewRulerBorder: false,
+            hideCursorInOverviewRuler: true,
+        });
+
+        // Load saved tabs or create default
+        const hasLoadedTabs = loadTabs();
+        if (!hasLoadedTabs) {
+            createTab("Main Tab", "print(\"Hexora loaded!\")", false);
+            switchTab(document.querySelector('.tab').id);
+        }
+        
+        // Setup auto-save
+        setupAutoSave();
+        
+        // Setup toggles
+        setupToggles();
+        
+        // Enable Lua error detection
+        monaco.editor.onDidCreateModel((model) => {
+            function validateLua() {
+                const code = model.getValue();
+                const markers = [];
+                
+                // Basic Lua syntax error detection
+                const lines = code.split('\n');
+                const openBlocks = [];
+                
+                lines.forEach((line, index) => {
+                    const trimmed = line.trim();
+                    
+                    // Check for common Lua syntax errors
+                    
+                    // Unmatched quotes - strip escaped quotes first, then check balance
+                    const lineNoEscapes = line.replace(/\\["']/g, '');
+                    // Count unescaped single quotes not inside double-quoted strings
+                    let inDouble = false;
+                    let singleCount = 0;
+                    for (let i = 0; i < lineNoEscapes.length; i++) {
+                        const ch = lineNoEscapes[i];
+                        if (ch === '"' && !inDouble) inDouble = true;
+                        else if (ch === '"' && inDouble) inDouble = false;
+                        else if (ch === "'" && !inDouble) singleCount++;
+                    }
+                    const doubleQuotes = (lineNoEscapes.match(/"/g) || []).length;
+                    if (singleCount % 2 !== 0 || doubleQuotes % 2 !== 0) {
+                        markers.push({
+                            severity: monaco.MarkerSeverity.Error,
+                            startLineNumber: index + 1,
+                            startColumn: 1,
+                            endLineNumber: index + 1,
+                            endColumn: line.length + 1,
+                            message: 'Unmatched quote'
+                        });
+                    }
+                    
+                    // Check for block keywords
+                    if (/\b(function|if|for|while|repeat|do)\b/.test(trimmed) && !trimmed.includes('end') && !trimmed.includes('until')) {
+                        openBlocks.push({ keyword: RegExp.$1, line: index + 1 });
+                    }
+                    
+                    if (/\bend\b/.test(trimmed) && openBlocks.length > 0) {
+                        openBlocks.pop();
+                    }
+                    
+                    if (/\buntil\b/.test(trimmed)) {
+                        const lastBlock = openBlocks[openBlocks.length - 1];
+                        if (lastBlock && lastBlock.keyword === 'repeat') {
+                            openBlocks.pop();
+                        }
+                    }
+                    
+                    // Check for 'then' after 'if'
+                    if (/\bif\b/.test(trimmed) && !/\bthen\b/.test(trimmed) && !trimmed.endsWith('then')) {
+                        const ifMatch = line.match(/\bif\b/);
+                        if (ifMatch && !line.substring(ifMatch.index).includes('then')) {
+                            markers.push({
+                                severity: monaco.MarkerSeverity.Warning,
+                                startLineNumber: index + 1,
+                                startColumn: ifMatch.index + 1,
+                                endLineNumber: index + 1,
+                                endColumn: ifMatch.index + 3,
+                                message: 'Missing "then" after "if"'
+                            });
+                        }
+                    }
+                    
+                    // Check for assignment to nil
+                    if (/=\s*nil\s*$/.test(trimmed)) {
+                        markers.push({
+                            severity: monaco.MarkerSeverity.Warning,
+                            startLineNumber: index + 1,
+                            startColumn: 1,
+                            endLineNumber: index + 1,
+                            endColumn: line.length + 1,
+                            message: 'Assignment to nil'
+                        });
+                    }
+                });
+                
+                // Check for unclosed blocks
+                openBlocks.forEach(block => {
+                    markers.push({
+                        severity: monaco.MarkerSeverity.Error,
+                        startLineNumber: block.line,
+                        startColumn: 1,
+                        endLineNumber: block.line,
+                        endColumn: 10,
+                        message: `Unclosed '${block.keyword}' block`
+                    });
+                });
+                
+                monaco.editor.setModelMarkers(model, 'lua', markers);
+            }
+            
+            // Validate on change
+            model.onDidChangeContent(() => {
+                validateLua();
+            });
+            
+            // Initial validation
+            validateLua();
+        });
+        
+        setTimeout(() => {
+            const loading = document.getElementById('loading-screen');
+            loading.style.opacity = '0';
+            loading.style.visibility = 'hidden';
+            showToast('Hexora Ready', 'Session restored successfully');
+        }, 800);
+    });
+
+    function performClose(id) {
+        const tabs = document.querySelectorAll('.tab');
+        if (tabs.length > 1) {
+            const tabEl = document.getElementById(id);
+            const tabName = tabEl.querySelector('span').textContent;
+            tabEl.classList.add('closing');
+            
+            setTimeout(() => {
+                tabEl.remove();
+                delete tabData[id];
+                if (activeTabId === id) {
+                    const nextTab = document.querySelector('.tab');
+                    if (nextTab) switchTab(nextTab.id);
+                }
+                showToast('Tab Closed', `"${tabName}" has been removed`);
+                saveTabs();
+            }, 250);
+        } else {
+            showToast('Cannot Close', 'At least one tab must remain open');
+        }
+    }
+
+    function createTab(name, content = "", showNotification = false, customId = null) {
+        const id = customId || 'tab-' + Math.random().toString(36).substr(2, 9);
+        tabData[id] = content;
+        const tab = document.createElement('div');
+        tab.className = 'tab'; tab.id = id;
+        tab.innerHTML = `<i class="fa fa-file-code"></i><span>${name}</span><div class="close-tab"><i class="fa fa-times"></i></div>`;
+        document.getElementById('tabs-bar').insertBefore(tab, document.getElementById('add-tab'));
+        
+        tab.onclick = (e) => {
+            if (!e.target.closest('.close-tab')) {
+                switchTab(id);
+            }
+        };
+        
+        tab.querySelector('.close-tab').onclick = (e) => { 
+            e.stopPropagation(); 
+            performClose(id); 
+        };
+        
+        tab.onmousedown = (e) => {
+            if (e.button === 1) {
+                e.preventDefault();
+                performClose(id);
+            }
+        };
+        
+        tab.oncontextmenu = (e) => {
+            e.preventDefault(); 
+            e.stopPropagation();
+            rightClickedTabId = id;
+            showContextMenu('context-menu', e.pageX, e.pageY);
+        };
+        
+        if (showNotification) {
+            showToast('Tab Created', `"${name}" added to workspace`);
+        }
+        
+        saveTabs();
+    }
+
+    function switchTab(id) {
+        if (activeTabId === id) return;
+        if (activeTabId && editor) tabData[activeTabId] = editor.getValue();
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        const target = document.getElementById(id);
+        if (target) { 
+            target.classList.add('active'); 
+            activeTabId = id; 
+            editor.setValue(tabData[id]); 
+        }
+        saveTabs();
+    }
+    
+    // Auto-save content on changes
+    function setupAutoSave() {
+        if (editor) {
+            editor.onDidChangeModelContent(() => {
+                if (activeTabId) {
+                    tabData[activeTabId] = editor.getValue();
+                    saveTabs();
+                }
+            });
+        }
+    }
+
+    function showContextMenu(menuId, x, y) {
+        hideAllMenus();
+        const menu = document.getElementById(menuId);
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+        
+        // Force reflow to ensure transition plays
+        menu.offsetHeight;
+        
+        menu.classList.add('show');
+    }
+  
+    function hideAllMenus() {
+        document.querySelectorAll('#context-menu, #plus-context-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+
+    function saveFile(extension) {
+        if (!rightClickedTabId) return;
+        
+        const content = tabData[rightClickedTabId];
+        const tabName = document.getElementById(rightClickedTabId).querySelector('span').textContent;
+        const fileName = `${tabName}.${extension}`;
+        
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('File Saved', `Downloaded as ${fileName}`);
+        hideAllMenus();
+    }
+
+    function openFile() {
+        const fileInput = document.getElementById('file-input');
+        fileInput.click();
+    }
+
+    document.getElementById('file-input').addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files.length === 0) return;
+        
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const content = event.target.result;
+                const fileName = file.name.replace(/\.[^/.]+$/, "");
+                createTab(fileName, content, true);
+            };
+            reader.readAsText(file);
+        });
+        
+        e.target.value = '';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#context-menu') && !e.target.closest('#plus-context-menu')) {
+            hideAllMenus();
+        }
+    });
+
+    document.getElementById('context-menu').addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+    
+    document.getElementById('plus-context-menu').addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    document.getElementById('ctx-rename').onclick = () => {
+        const span = document.getElementById(rightClickedTabId).querySelector('span');
+        const oldName = span.textContent;
+        span.contentEditable = true; 
+        span.focus();
+        document.execCommand('selectAll', false, null);
+        
+        span.onkeydown = (e) => { 
+            if (e.key === 'Enter') { 
+                e.preventDefault(); 
+                span.blur(); 
+            } 
+            if (e.key === 'Escape') {
+                span.textContent = oldName;
+                span.blur();
+            }
+        };
+        
+        span.onblur = () => { 
+            span.contentEditable = false;
+            const newName = span.textContent.trim();
+            if (!newName) {
+                span.textContent = oldName;
+            } else if (oldName !== newName) {
+                showToast('Tab Renamed', `"${oldName}" → "${newName}"`);
+            }
+            saveTabs();
+        };
+        
+        hideAllMenus();
+    };
+
+    document.getElementById('ctx-save-lua').onclick = () => saveFile('lua');
+    document.getElementById('ctx-save-txt').onclick = () => saveFile('txt');
+
+    document.getElementById('ctx-pin').onclick = () => {
+        const tab = document.getElementById(rightClickedTabId);
+        const bar = document.getElementById('tabs-bar');
+        const tabName = tab.querySelector('span').textContent;
+        bar.insertBefore(tab, bar.firstChild);
+        showToast('Tab Pinned', `"${tabName}" moved to start`);
+        hideAllMenus();
+    };
+
+    document.getElementById('ctx-close').onclick = () => {
+        performClose(rightClickedTabId);
+        hideAllMenus();
+    };
+
+    document.getElementById('add-tab').onclick = () => {
+        createTab("New Tab", "", true);
+        switchTab(document.querySelectorAll('.tab')[document.querySelectorAll('.tab').length - 1].id);
+    };
+    
+    document.getElementById('add-tab').oncontextmenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showContextMenu('plus-context-menu', e.pageX, e.pageY);
+    };
+
+    document.getElementById('ctx-new-tab').onclick = () => {
+        createTab("New Tab", "", true);
+        switchTab(document.querySelectorAll('.tab')[document.querySelectorAll('.tab').length - 1].id);
+        hideAllMenus();
+    };
+
+    document.getElementById('ctx-open-file').onclick = () => {
+        openFile();
+        hideAllMenus();
+    };
+
+    document.getElementById('ctx-open-menu').onclick = () => {
+        openSettings();
+        hideAllMenus();
+    };
+</script>
+</body>
+</html>
