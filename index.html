@@ -14,18 +14,19 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     :root {
-        --bg: #171717;
-        --container-bg: #111111;
+        --bg: #1c1c1c;
+        --container-bg: #1c1c1c;
+        --tab-bg: #161616;
         --accent: #305dff;
         --accent-light: #5a80ff;
-        --accent-dim: rgba(48, 93, 255, 0.15);
-        --tab-active: #171717;
+        --accent-dim: #305dff18;
+        --tab-active: #1c1c1c;
         --tab-inactive: transparent;
-        --popup-bg: #1a1a1a;
-        --border: rgba(48, 93, 255, 0.2);
+        --popup-bg: #222222;
+        --border: #2a2a2a;
         --text: #ffffff;
-        --text-dim: #7a7a7a;
-        --hover: rgba(48, 93, 255, 0.08);
+        --text-dim: #666666;
+        --hover: #305dff12;
         --dark-gray: #2a2a2a;
     }
 
@@ -40,12 +41,13 @@
         height: 38px;
         display: flex;
         align-items: flex-end;
-        background: var(--container-bg);
-        padding: 4px 12px 0 12px;
+        background: #161616;
+        padding: 4px 8px 0 8px;
         gap: 0;
         box-sizing: border-box;
         position: relative;
         z-index: 5;
+        border-bottom: 1px solid #2a2a2a;
     }
 
     .tab.closing {
@@ -95,12 +97,12 @@
     
     .tab::before {
         left: -12px;
-        background: radial-gradient(circle at 0 0, transparent 12px, #171717 12px);
+        background: radial-gradient(circle at 0 0, transparent 12px, #1c1c1c 12px);
     }
     
     .tab::after {
         right: -12px;
-        background: radial-gradient(circle at 100% 0, transparent 12px, #171717 12px);
+        background: radial-gradient(circle at 100% 0, transparent 12px, #1c1c1c 12px);
     }
 
     @keyframes tabEntrance {
@@ -189,7 +191,7 @@
         flex: 1;
         width: 100%;
         min-width: 0;
-        background: #171717;
+        background: #1c1c1c;
         border: none;
         overflow: hidden;
         position: relative;
@@ -309,7 +311,7 @@
     #loading-screen {
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: #171717;
+        background: #1c1c1c;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -809,7 +811,7 @@
                 { token: 'parameter', foreground: 'ffcb8b' },
             ],
             colors: { 
-                'editor.background': '#171717',
+                'editor.background': '#1c1c1c',
                 'editor.foreground': '#eeffff',
                 
                 // Cursor
@@ -850,10 +852,10 @@
                 'editorSuggestWidget.highlightForeground': '#5a80ff',
                 'editorSuggestWidget.foreground': '#eeffff',
                 
-                // Scrollbar
-                'scrollbarSlider.background': '#305dff26',
-                'scrollbarSlider.hoverBackground': '#305dff40',
-                'scrollbarSlider.activeBackground': '#305dff66',
+                // Scrollbar - very subtle
+                'scrollbarSlider.background': '#ffffff10',
+                'scrollbarSlider.hoverBackground': '#ffffff20',
+                'scrollbarSlider.activeBackground': '#305dff40',
                 
                 // Minimap
                 'minimap.background': '#00000000',
@@ -1327,11 +1329,11 @@
             
             // Scrollbar
             scrollbar: {
-                vertical: 'visible',
-                horizontal: 'visible',
+                vertical: 'auto',
+                horizontal: 'auto',
                 useShadows: false,
-                verticalScrollbarSize: 8,
-                horizontalScrollbarSize: 8
+                verticalScrollbarSize: 6,
+                horizontalScrollbarSize: 6
             },
 
             // Hide overview ruler (the red bar on the right)
